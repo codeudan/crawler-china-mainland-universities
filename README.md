@@ -7,7 +7,7 @@
 ## 使用
 git clone
 
-cd china_mainland_university
+cd crawler-china-mainland-universities
 
 npm install
 
