@@ -107,7 +107,9 @@ async function main() {
                       data[pName].mb.push(result)
                     }
                   }
-                  data[pName].all.push(result)
+                  if (data[pName].all.indexOf(result) < 0) {
+                    data[pName].all.push(result)
+                  }
                 })
               }
             }
