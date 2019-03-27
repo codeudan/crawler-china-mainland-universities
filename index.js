@@ -42,12 +42,11 @@ function output() {
     path = program.path
   }
   const outputFilename = `${path}/china_mainland_universities.json`
-  console.log(outputFilename)
   fs.writeFile(outputFilename, JSON.stringify(data, null, 2), err => {
     if (err) {
       console.error(err)
     }
-    console.log(chalk.green(`下载成功，已保持到：${outputFilename}`))
+    console.log(chalk.green(`下载成功，已保存到：${outputFilename}`))
   })
 }
 
@@ -65,14 +64,15 @@ async function main() {
       const $entry = cheerio.load(entry)('a')[0]
       if ($entry) {
         const url = $entry.attribs.href
-        const pName = $entry.children[0].data
+        let pName = $entry.children[0].data
         if (pName === '香港高校名单' ||
           pName === '澳门高校名单' ||
           pName === '台湾高校名单') {
           resolve()
           return
         }
-        console.log(chalk.blue(`开始下载：${pName}`))
+        pName = pName.split('普通高校名单')[0]
+        console.log(chalk.blue(`开始下载：${pName}列表`))
         data[pName] = {
           all: [],
         }
@@ -117,7 +117,7 @@ async function main() {
           resolve()
         }).catch(err => {
           console.error(err)
-          console.log(chalk.red(`下载错误：${pName}`))
+          console.log(chalk.red(`下载错误：${pName}列表`))
           reject()
         })
       } else {
