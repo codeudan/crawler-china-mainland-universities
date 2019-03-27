@@ -1,0 +1,25 @@
+{
+  "name": "crawler-china-mainland-universities",
+  "version": "1.0.0",
+  "description": "crawler-china-mainland-universities",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codeudan/crawler-china-mainland-universities.git"
+  },
+  "dependencies": {
+    "bufferhelper": "^0.2.1",
+    "chalk": "^2.4.2",
+    "cheerio": "^1.0.0-rc.2",
+    "commander": "^2.19.0",
+    "iconv-lite": "^0.4.24",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "codeudan",
+  "license": "MIT"
+}
