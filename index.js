@@ -82,16 +82,16 @@ async function main() {
           data[pName].dl = []
           data[pName].mb = []
         }
-        load(url).then(indexHtml => {
-          const str = indexHtml.match(/<\/head>([\w\W]*?)<\/boby>/)[1]
+        load(url).then(html => {
+          const str = html.match(/<\/head>([\w\W]*?)<\/boby>/)[1]
           const $index = cheerio.load(str, { decodeEntities: false });
           ['hn', 'zw', 'zg', 'zz'].forEach(type => {
-            const $zz = $index(`table#Change_${type}`)
-            const zzHtml = $zz.html()
-            if (zzHtml) {
-              const zzNames = zzHtml.match(/target="_blank">(\p{Unified_Ideograph}*?)<\/a>/gu)
-              if (zzNames) {
-                zzNames.forEach(name => {
+            const $part = $index(`table#Change_${type}`)
+            const partHtml = $part.html()
+            if (partHtml) {
+              const names = partHtml.match(/target="_blank">(\p{Unified_Ideograph}*?)<\/a>/gu)
+              if (names) {
+                names.forEach(name => {
                   let result = name.replace('target="_blank">', '').replace('</a>', '')
                   if (program.classify) {
                     if (type === 'hn') {
