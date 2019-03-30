@@ -6,15 +6,14 @@ const cheerio = require('cheerio')
 const chalk = require('chalk')
 const program = require('commander')
 
-const index = 'http://www.huaue.com/gxmd.htm'
-const data = {}
+const max = 137
+const host = 'https://gaokao.chsi.com.cn/sch/'
+const finalData = {}
 
 program
   .version('1.0.0', '-v, --version')
   .description('中国大陆高校列表爬虫')
-  .option('-c, --classify', '按本科、专科、独立、民办分类')
   .option('-p, --path [path]', '导出路径，默认在用户目录')
-  .option('-d, --debug', 'debug 模式，无论是否完全下载成功，都将导出数据')
   .parse(process.argv)
 
 function load(url) {
@@ -29,7 +28,7 @@ function load(url) {
         bufferHelper.concat(chunk)
       })
       res.on('end', () => {
-        const result = iconv.decode(bufferHelper.toBuffer(), 'GBK')
+        const result = iconv.decode(bufferHelper.toBuffer(), 'UTF-8')
         resolve(result)
       })
     })
@@ -42,99 +41,60 @@ function output() {
     path = program.path
   }
   const outputFilename = `${path}/china_mainland_universities.json`
-  fs.writeFile(outputFilename, JSON.stringify(data, null, 2), err => {
+  fs.writeFile(outputFilename, JSON.stringify(finalData, null, 2), err => {
     if (err) {
       console.error(err)
     }
-    console.log(chalk.green(`下载成功，已保存到：${outputFilename}`))
+    console.log(chalk.green(`全部数据下载成功，已保存到：${outputFilename}`))
   })
 }
 
-async function main() {
-  const indexHtml = await load(index)
-  const indexStr = indexHtml.match(/<table cellSpacing="1" width="960" bgColor="#cccccc" border="0" id="table2">([\w\W]*?)<\/table>/)[1]
-  let entries = indexStr.match(/<td align="middle" width="20%" bgColor="#FFFFFF" height="35">([\w\W]*?)<\/td>/g)
-  if (!entries.length) {
-    reject()
-    return
-  }
-  const promiseAll = []
-  entries.forEach(entry => {
-    promiseAll.push(new Promise((resolve, reject) => {
-      const $entry = cheerio.load(entry)('a')[0]
-      if ($entry) {
-        const url = $entry.attribs.href
-        let pName = $entry.children[0].data
-        if (pName === '香港高校名单' ||
-          pName === '澳门高校名单' ||
-          pName === '台湾高校名单') {
-          resolve()
-          return
+function load$(html) {
+  return cheerio.load(html, { decodeEntities: false })
+}
+
+
+const promiseAll = []
+for (let i = 0; i < max; i++) {
+  promiseAll.push(new Promise(async (resolve, reject) => {
+    load(`${host}search.do?searchType=1&start=${i * 20}`).then(html => {
+      const $ = load$(html)
+      const pageData = []
+      $('.ch-table tr').each((idx, item) => {
+        const $ = load$(item)
+        if ($('.js-yxk-yxmc').length) {
+          const name = $('.js-yxk-yxmc').text().trim()
+          const region = $('.js-yxk-yxmc').next().text().trim()
+          if (name && region) {
+            pageData.push({
+              name,
+              region
+            })
+          }
         }
-        pName = pName.split('普通高校名单')[0]
-        console.log(chalk.blue(`开始下载：${pName}列表`))
-        data[pName] = {
-          all: [],
-        }
-        if (program.classify) {
-          data[pName].bk = []
-          data[pName].zk = []
-          data[pName].dl = []
-          data[pName].mb = []
-        }
-        load(url).then(html => {
-          const str = html.match(/<\/head>([\w\W]*?)<\/boby>/)[1]
-          const $index = cheerio.load(str, { decodeEntities: false });
-          ['hn', 'zw', 'zg', 'zz'].forEach(type => {
-            const $part = $index(`table#Change_${type}`)
-            const partHtml = $part.html()
-            if (partHtml) {
-              const names = partHtml.match(/target="_blank">(\p{Unified_Ideograph}*?)<\/a>/gu)
-              if (names) {
-                names.forEach(name => {
-                  let result = name.replace('target="_blank">', '').replace('</a>', '')
-                  if (program.classify) {
-                    if (type === 'hn') {
-                      data[pName].bk.push(result)
-                    }
-                    if (type === 'zw') {
-                      data[pName].zk.push(result)
-                    }
-                    if (type === 'zg') {
-                      data[pName].dl.push(result)
-                    }
-                    if (type === 'zz') {
-                      data[pName].mb.push(result)
-                    }
-                  }
-                  if (data[pName].all.indexOf(result) < 0) {
-                    data[pName].all.push(result)
-                  }
-                })
-              }
-            }
-          })
-          resolve()
-        }).catch(err => {
-          console.error(err)
-          console.log(chalk.red(`下载错误：${pName}列表`))
-          reject()
-        })
-      } else {
-        resolve()
+      })
+      resolve(pageData)
+    }).catch(err => {
+      console.log(chalk.red(`第${i + 1}页下载失败`))
+      reject(err)
+    })
+  }))
+}
+
+Promise.all(promiseAll).then(pages => {
+  pages.forEach(page => {
+    page.forEach(item => {
+      finalData[item.region] = finalData[item.region] || { all: [] }
+      if (finalData[item.region].all.indexOf(item.name) < 0) {
+        finalData[item.region].all.push(item.name)
       }
-    }))
+    })
   })
-  Promise.all(promiseAll).then(() => {
+  output()
+}).catch(err => {
+  console.error(err)
+  console.log(chalk.red(`下载错误`))
+  if (program.debug) {
     output()
-  }).catch(err => {
-    console.log(chalk.red(`下载错误`))
-    if (program.debug) {
-      output()
-    }
-  })
-}
-
-main().catch(() => {
-  console.log(chalk.red('加载 index 错误'))
+  }
 })
