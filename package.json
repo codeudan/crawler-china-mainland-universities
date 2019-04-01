@@ -1,6 +1,6 @@
 {
   "name": "crawler-china-mainland-universities",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "crawler-china-mainland-universities",
   "main": "index.js",
   "repository": {
@@ -8,11 +8,9 @@
     "url": "git+https://github.com/codeudan/crawler-china-mainland-universities.git"
   },
   "dependencies": {
-    "bufferhelper": "^0.2.1",
     "chalk": "^2.4.2",
     "cheerio": "^1.0.0-rc.2",
     "commander": "^2.19.0",
-    "iconv-lite": "^0.4.24",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.7"
   },

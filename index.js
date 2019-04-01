@@ -1,11 +1,10 @@
 const fs = require('fs')
 const request = require('request')
-const iconv = require('iconv-lite')
-const BufferHelper = require('bufferhelper')
 const cheerio = require('cheerio')
 const chalk = require('chalk')
 const program = require('commander')
 
+const excludeList = ['香港', '澳门', '台湾']
 const max = 137
 const host = 'https://gaokao.chsi.com.cn/sch/'
 const finalData = {}
@@ -18,20 +17,26 @@ program
 
 function load(url) {
   return new Promise((resolve, reject) => {
-    const req = request(url)
-    req.on('error', err => {
-      reject(err)
-    })
-    req.on('response', res => {
-      const bufferHelper = new BufferHelper()
-      res.on('data', chunk => {
-        bufferHelper.concat(chunk)
+    const retryNum = 3
+    const q = n => {
+      const req = request({
+        url,
+        timeout: 5000,
+      }, function(error, response, body) {
+        if (error) {
+          if (n < retryNum) {
+            setTimeout(() => {
+              q(n + 1)
+            }, 1000)
+            return
+          }
+          reject(error)
+          return
+        }
+        resolve(body)
       })
-      res.on('end', () => {
-        const result = iconv.decode(bufferHelper.toBuffer(), 'UTF-8')
-        resolve(result)
-      })
-    })
+    }
+    q(0)
   })
 }
 
@@ -85,6 +90,9 @@ for (let i = 0; i < max; i++) {
 Promise.all(promiseAll).then(pages => {
   pages.forEach(page => {
     page.forEach(item => {
+      if (excludeList.indexOf(item.region) > -1) {
+        return
+      }
       finalData[item.region] = finalData[item.region] || { all: [] }
       if (finalData[item.region].all.indexOf(item.name) < 0) {
         finalData[item.region].all.push(item.name)
