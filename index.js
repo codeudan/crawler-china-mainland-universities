@@ -73,6 +73,7 @@ for (let i = 0; i < max; i++) {
           }
         }
       })
+      console.log(chalk.red(`第${i + 1}页下载成功`))
       resolve(pageData)
     }).catch(err => {
       console.log(chalk.red(`第${i + 1}页下载失败`))
@@ -94,7 +95,5 @@ Promise.all(promiseAll).then(pages => {
 }).catch(err => {
   console.error(err)
   console.log(chalk.red(`下载错误`))
-  if (program.debug) {
-    output()
-  }
+  process.exit(1)
 })
