@@ -1,6 +1,6 @@
 {
   "name": "crawler-china-mainland-universities",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "crawler-china-mainland-universities",
   "main": "index.js",
   "repository": {
@@ -11,13 +11,15 @@
     "chalk": "^2.4.2",
     "cheerio": "^1.0.0-rc.2",
     "commander": "^2.19.0",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.7"
+    "request": "^2.88.0"
   },
   "devDependencies": {},
   "scripts": {
     "test": "node test.js"
   },
   "author": "codeudan",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=8"
+  }
 }
