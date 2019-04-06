@@ -5,7 +5,6 @@ const chalk = require('chalk')
 const program = require('commander')
 
 const excludeList = ['香港', '澳门', '台湾']
-const max = 137
 const host = 'https://gaokao.chsi.com.cn/sch/'
 const finalData = {}
 
@@ -58,50 +57,66 @@ function load$(html) {
   return cheerio.load(html, { decodeEntities: false })
 }
 
-
-const promiseAll = []
-for (let i = 0; i < max; i++) {
-  promiseAll.push(new Promise(async (resolve, reject) => {
-    load(`${host}search.do?searchType=1&start=${i * 20}`).then(html => {
-      const $ = load$(html)
-      const pageData = []
-      $('.ch-table tr').each((idx, item) => {
-        const $ = load$(item)
-        if ($('.js-yxk-yxmc').length) {
-          const name = $('.js-yxk-yxmc').text().trim()
-          const region = $('.js-yxk-yxmc').next().text().trim()
-          if (name && region) {
-            pageData.push({
-              name,
-              region
-            })
+async function main() {
+  let max = 0
+  const html = await load(`${host}search.do?searchType=1&start=0`)
+  const $ = load$(html)
+  $('.lip').each((idx, lip) => {
+    const $ = load$(lip)
+    const current = Number($('a').text())
+    if (current > max) {
+      max = current
+    }
+  })
+  const promiseAll = []
+  for (let i = 0; i < max; i++) {
+    promiseAll.push(new Promise(async (resolve, reject) => {
+      load(`${host}search.do?searchType=1&start=${i * 20}`).then(html => {
+        const $ = load$(html)
+        const pageData = []
+        $('.ch-table tr').each((idx, item) => {
+          const $ = load$(item)
+          if ($('.js-yxk-yxmc').length) {
+            const name = $('.js-yxk-yxmc').text().trim()
+            const region = $('.js-yxk-yxmc').next().text().trim()
+            if (name && region) {
+              pageData.push({
+                name,
+                region
+              })
+            }
           }
+        })
+        console.log(chalk.red(`第${i + 1}页下载成功`))
+        resolve(pageData)
+      }).catch(err => {
+        console.log(chalk.red(`第${i + 1}页下载失败`))
+        reject(err)
+      })
+    }))
+  }
+
+  Promise.all(promiseAll).then(pages => {
+    pages.forEach(page => {
+      page.forEach(item => {
+        if (excludeList.indexOf(item.region) > -1) {
+          return
+        }
+        finalData[item.region] = finalData[item.region] || { all: [] }
+        if (finalData[item.region].all.indexOf(item.name) < 0) {
+          finalData[item.region].all.push(item.name)
         }
       })
-      console.log(chalk.red(`第${i + 1}页下载成功`))
-      resolve(pageData)
-    }).catch(err => {
-      console.log(chalk.red(`第${i + 1}页下载失败`))
-      reject(err)
     })
-  }))
+    output()
+  }).catch(err => {
+    console.error(err)
+    console.log(chalk.red(`下载错误`))
+    process.exit(1)
+  })
 }
 
-Promise.all(promiseAll).then(pages => {
-  pages.forEach(page => {
-    page.forEach(item => {
-      if (excludeList.indexOf(item.region) > -1) {
-        return
-      }
-      finalData[item.region] = finalData[item.region] || { all: [] }
-      if (finalData[item.region].all.indexOf(item.name) < 0) {
-        finalData[item.region].all.push(item.name)
-      }
-    })
-  })
-  output()
-}).catch(err => {
+main().catch(err => {
   console.error(err)
   console.log(chalk.red(`下载错误`))
-  process.exit(1)
 })
