@@ -5,13 +5,13 @@ const chalk = require('chalk')
 const program = require('commander')
 
 const excludeList = ['香港', '澳门', '台湾']
-const host = 'https://gaokao.chsi.com.cn/sch/'
+const url = 'https://gaokao.chsi.com.cn/sch/'
 const finalData = {}
 
 program
   .version('1.0.0', '-v, --version')
   .description('中国大陆高校列表爬虫')
-  .option('-p, --path [path]', '导出路径，默认在用户目录')
+  .option('-p, --path [path]', '导出路径，默认在代码仓库目录')
   .parse(process.argv)
 
 function load(url) {
@@ -40,7 +40,7 @@ function load(url) {
 }
 
 function output() {
-  let path = process.env.HOME
+  let path = __dirname
   if (program.path) {
     path = program.path
   }
@@ -59,7 +59,7 @@ function load$(html) {
 
 async function main() {
   let max = 0
-  const html = await load(`${host}search.do?searchType=1&start=0`)
+  const html = await load(`${url}search.do?searchType=1&start=0`)
   const $ = load$(html)
   $('.lip').each((idx, lip) => {
     const $ = load$(lip)
@@ -71,7 +71,7 @@ async function main() {
   const promiseAll = []
   for (let i = 0; i < max; i++) {
     promiseAll.push(new Promise(async (resolve, reject) => {
-      load(`${host}search.do?searchType=1&start=${i * 20}`).then(html => {
+      load(`${url}search.do?searchType=1&start=${i * 20}`).then(html => {
         const $ = load$(html)
         const pageData = []
         $('.ch-table tr').each((idx, item) => {
@@ -87,10 +87,10 @@ async function main() {
             }
           }
         })
-        console.log(chalk.red(`第${i + 1}页下载成功`))
+        console.log(chalk.green(`✔ 第${i + 1}页`))
         resolve(pageData)
       }).catch(err => {
-        console.log(chalk.red(`第${i + 1}页下载失败`))
+        console.log(chalk.red(`✘ 第${i + 1}页`))
         reject(err)
       })
     }))
