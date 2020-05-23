@@ -2,7 +2,7 @@
 中国大陆高校列表爬虫，导出格式为 JSON，使用学信网数据。目前已经包含一份完整数据，见 china_mainland_universities.json
 
 ## 数据
-[china_mainland_universities.json](./china_mainland_universities.json) (截止到 2019.12.10)
+[china_mainland_universities.json](./china_mainland_universities.json) (截止到 2020.05.23)
 
 ## 更新数据
 安装 node.js
