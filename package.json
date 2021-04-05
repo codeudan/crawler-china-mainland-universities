@@ -7,19 +7,27 @@
     "type": "git",
     "url": "git+https://github.com/codeudan/crawler-china-mainland-universities.git"
   },
+  "scripts": {
+    "test": "jest"
+  },
+  "husky": {
+    "hooks": {
+      "pre-push": "npm test"
+    }
+  },
+  "author": "codeudan",
+  "license": "MIT",
+  "engines": {
+    "node": ">=8"
+  },
   "dependencies": {
     "chalk": "^2.4.2",
     "cheerio": "^1.0.0-rc.2",
     "commander": "^2.19.0",
     "request": "^2.88.0"
   },
-  "devDependencies": {},
-  "scripts": {
-    "test": "node test.js"
-  },
-  "author": "codeudan",
-  "license": "MIT",
-  "engines": {
-    "node": ">=8"
+  "devDependencies": {
+    "husky": "^3.1.0",
+    "jest": "^26.6.3"
   }
 }

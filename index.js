@@ -18,22 +18,25 @@ function load(url) {
   return new Promise((resolve, reject) => {
     const retryNum = 3
     const q = n => {
-      const req = request({
-        url,
-        timeout: 5000,
-      }, function(error, response, body) {
-        if (error) {
-          if (n < retryNum) {
-            setTimeout(() => {
-              q(n + 1)
-            }, 1000)
+      const req = request(
+        {
+          url,
+          timeout: 5000,
+        },
+        function (error, response, body) {
+          if (error) {
+            if (n < retryNum) {
+              setTimeout(() => {
+                q(n + 1)
+              }, 1000)
+              return
+            }
+            reject(error)
             return
           }
-          reject(error)
-          return
+          resolve(body)
         }
-        resolve(body)
-      })
+      )
     }
     q(0)
   })
@@ -70,50 +73,56 @@ async function main() {
   })
   const promiseAll = []
   for (let i = 0; i < max; i++) {
-    promiseAll.push(new Promise(async (resolve, reject) => {
-      load(`${url}search.do?searchType=1&start=${i * 20}`).then(html => {
-        const $ = load$(html)
-        const pageData = []
-        $('.ch-table tr').each((idx, item) => {
-          const $ = load$(item)
-          if ($('.js-yxk-yxmc').length) {
-            const name = $('.js-yxk-yxmc').text().trim()
-            const region = $('.js-yxk-yxmc').next().text().trim()
-            if (name && region) {
-              pageData.push({
-                name,
-                region
-              })
-            }
-          }
-        })
-        console.log(chalk.green(`✔ 第${i + 1}页`))
-        resolve(pageData)
-      }).catch(err => {
-        console.log(chalk.red(`✘ 第${i + 1}页`))
-        reject(err)
+    promiseAll.push(
+      new Promise(async (resolve, reject) => {
+        load(`${url}search.do?searchType=1&start=${i * 20}`)
+          .then(html => {
+            const $ = load$(html)
+            const pageData = []
+            $('.ch-table tr').each((idx, item) => {
+              const $ = load$(item)
+              if ($('.js-yxk-yxmc').length) {
+                const name = $('.js-yxk-yxmc').text().trim()
+                const region = $('.js-yxk-yxmc').next().text().trim()
+                if (name && region) {
+                  pageData.push({
+                    name,
+                    region,
+                  })
+                }
+              }
+            })
+            console.log(chalk.green(`✔ 第${i + 1}页`))
+            resolve(pageData)
+          })
+          .catch(err => {
+            console.log(chalk.red(`✘ 第${i + 1}页`))
+            reject(err)
+          })
       })
-    }))
+    )
   }
 
-  Promise.all(promiseAll).then(pages => {
-    pages.forEach(page => {
-      page.forEach(item => {
-        if (excludeList.indexOf(item.region) > -1) {
-          return
-        }
-        finalData[item.region] = finalData[item.region] || { all: [] }
-        if (finalData[item.region].all.indexOf(item.name) < 0) {
-          finalData[item.region].all.push(item.name)
-        }
+  Promise.all(promiseAll)
+    .then(pages => {
+      pages.forEach(page => {
+        page.forEach(item => {
+          if (excludeList.indexOf(item.region) > -1) {
+            return
+          }
+          finalData[item.region] = finalData[item.region] || { all: [] }
+          if (finalData[item.region].all.indexOf(item.name) < 0) {
+            finalData[item.region].all.push(item.name)
+          }
+        })
       })
+      output()
     })
-    output()
-  }).catch(err => {
-    console.error(err)
-    console.log(chalk.red(`下载错误`))
-    process.exit(1)
-  })
+    .catch(err => {
+      console.error(err)
+      console.log(chalk.red(`下载错误`))
+      process.exit(1)
+    })
 }
 
 main().catch(err => {
